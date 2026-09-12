@@ -14,6 +14,17 @@ npm.cmd run api
 
 The API listens on `http://localhost:5190` by default.
 
+## Frontend API URL
+
+For local development, leave `VITE_API_URL` empty. Vite proxies `/api` to the local API server.
+For production, set `VITE_API_URL` to the deployed Express base URL, for example:
+
+```env
+VITE_API_URL=https://your-live-api.onrender.com
+```
+
+The Supabase service-role key must remain server-only. Do not prefix it with `VITE_`.
+
 ## POST `/api/tests`
 
 ```json
