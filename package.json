@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "node server.cjs",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -15,6 +16,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
+    "@supabase/supabase-js": "^2.47.10",
     "vite": "^5.4.10"
   },
   "devDependencies": {}
