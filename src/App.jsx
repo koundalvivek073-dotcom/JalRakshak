@@ -5,8 +5,8 @@ import HealthAlerts from './components/HealthAlerts';
 import ImpactStats from './components/ImpactStats';
 import Scanner from './components/Scanner';
 import TankerRegistry from './components/TankerRegistry';
-import { apiUrl } from './api';
 import { borewells, defaultScan, tankers } from './data';
+import { supabase } from './supabase';
 
 export default function App() {
   const [dark, setDark] = useState(false);
@@ -33,8 +33,8 @@ export default function App() {
     setLogState('saving');
     const status = Number(testForm.fluoride) > 1.5 || Number(testForm.ph) < 6.5 || Number(testForm.ph) > 8.5 ? 'contaminated' : 'safe';
     try {
-      const response = await fetch(apiUrl('/api/tests'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...testForm, status }) });
-      if (!response.ok) throw new Error('Unable to save test');
+      const { error } = await supabase.from('water_tests').insert([{ location: testForm.location, ph: Number(testForm.ph), fluoride: Number(testForm.fluoride), nitrates: Number(testForm.nitrates), hardness: Number(testForm.hardness), status }]);
+      if (error) throw error;
       setLogState('saved');
       window.dispatchEvent(new CustomEvent('jalrakshak:test-created'));
       window.setTimeout(() => { setLogOpen(false); setLogState('idle'); }, 700);
