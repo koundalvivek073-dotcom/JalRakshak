@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "api": "node server.cjs",
-    "build": "vite build",
+    "build": "npx vite build",
     "preview": "vite preview"
   },
   "dependencies": {
