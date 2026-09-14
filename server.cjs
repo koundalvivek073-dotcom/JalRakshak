@@ -7,7 +7,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const port = process.env.PORT || 3000;
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
 
 app.use(express.json({ limit: '10kb' }));
 app.use((req, res, next) => {
@@ -18,7 +19,7 @@ app.use((req, res, next) => {
   return next();
 });
 
-const testFields = ['location', 'ph', 'fluoride', 'nitrates', 'hardness', 'status'];
+const testFields = ['location', 'latitude', 'longitude', 'ph', 'fluoride', 'nitrates', 'hardness', 'status', 'safety_score'];
 
 app.get('/api/tests', async (req, res) => {
   try {

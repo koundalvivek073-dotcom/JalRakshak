@@ -53,7 +53,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...payload,
-          location: { name: payload.location, lat: 12.9716, lng: 77.5946 },
+          location: payload.location,
         }),
       });
       const savedRecord = await response.json().catch(() => null);
