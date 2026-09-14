@@ -34,15 +34,15 @@ export default function App() {
     const status = Number(testForm.fluoride) > 1.5 || Number(testForm.ph) < 6.5 || Number(testForm.ph) > 8.5 ? 'contaminated' : 'safe';
     try {
       const { error } = await supabase.from('water_tests').insert([{
-        location: testForm.location || 'North Bengaluru',
-        latitude: Number(testForm.latitude) || 12.9716,
-        longitude: Number(testForm.longitude) || 77.5946,
-        ph: Number(testForm.ph),
-        fluoride: Number(testForm.fluoride),
-        nitrates: Number(testForm.nitrates),
-        hardness: Number(testForm.hardness),
+        location: testForm.location || 'India Test Point',
+        latitude: Number(testForm.latitude) || 20.5937,
+        longitude: Number(testForm.longitude) || 78.9629,
+        ph: parseFloat(testForm.ph) || 7.0,
+        fluoride: parseFloat(testForm.fluoride) || 0.0,
+        nitrates: parseFloat(testForm.nitrates) || 0.0,
+        hardness: parseFloat(testForm.hardness) || 0.0,
         status: status || 'safe',
-        safety_score: Number(testForm.safety_score) || 80,
+        safety_score: parseInt(testForm.safety_score, 10) || 80,
       }]);
       if (error) throw error;
       setLogState('saved');
