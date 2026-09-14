@@ -6,7 +6,7 @@ import ImpactStats from './components/ImpactStats';
 import Scanner from './components/Scanner';
 import TankerRegistry from './components/TankerRegistry';
 import { borewells, defaultScan, tankers } from './data';
-import { supabase } from './supabase';
+import { apiUrl } from './api';
 
 export default function App() {
   const [dark, setDark] = useState(false);
@@ -14,6 +14,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [logState, setLogState] = useState('idle');
+  const [saveNotice, setSaveNotice] = useState('');
   const [testForm, setTestForm] = useState({ location: 'Browser scan point', ph: defaultScan.ph, fluoride: defaultScan.fluoride, nitrates: defaultScan.nitrates, hardness: defaultScan.hardness });
 
   const handleScan = (result) => {
@@ -47,20 +48,27 @@ export default function App() {
         safety_score: parseInt(testForm.safety_score, 10) || 80,
       };
 
-      const { data, error } = await supabase
-        .from('water_tests')
-        .insert([payload])
-        .select();
+      const response = await fetch(apiUrl('/api/tests'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          location: { name: payload.location, lat: 12.9716, lng: 77.5946 },
+        }),
+      });
+      const savedRecord = await response.json().catch(() => null);
 
-      if (error) {
-        console.error('Supabase insert error:', error);
+      if (!response.ok || !savedRecord) {
+        console.error('Backend save error:', savedRecord);
         setLogState('error');
         return;
       }
 
       setLogState('saved');
-      window.dispatchEvent(new CustomEvent('jalrakshak:test-created', { detail: data?.[0] || payload }));
+      setSaveNotice('Saved and verified on the community map');
+      window.dispatchEvent(new CustomEvent('jalrakshak:test-created', { detail: savedRecord }));
       window.setTimeout(() => { setLogOpen(false); setLogState('idle'); }, 700);
+      window.setTimeout(() => setSaveNotice(''), 4200);
     } catch (err) {
       console.error('Form execution error:', err);
       setLogState('error');
@@ -76,6 +84,7 @@ export default function App() {
       <div className="lower-grid" id="scan"><Scanner onScan={handleScan} /><div id="registry"><TankerRegistry tankers={tankers} /></div></div>
     </main>
     <footer><span>JalRakshak <b>·</b> Community water intelligence</span><span>Data is crowdsourced and should be confirmed by a certified lab.</span><span className="footer-links">Privacy · Guidelines</span></footer>
+    {saveNotice && <div className="save-toast" role="status" aria-live="polite"><Check size={18} /><span><strong>Saved</strong>{saveNotice}</span></div>}
     {logOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setLogOpen(false); }}><form className="log-modal" onSubmit={submitTest}><div className="modal-heading"><div><p className="eyebrow">Community record</p><h2>Log a new test</h2></div><button type="button" className="icon-button" title="Close" onClick={() => setLogOpen(false)}><X size={18} /></button></div><p className="modal-copy">Your scanned values are prefilled. Confirm the location before sharing this result with the neighbourhood.</p><label className="form-field"><span><MapPin size={14} /> Location</span><input value={testForm.location} onChange={(event) => updateTestField('location', event.target.value)} required /></label><div className="form-grid">{[['ph', 'pH'], ['fluoride', 'Fluoride mg/L'], ['nitrates', 'Nitrates mg/L'], ['hardness', 'Hardness mg/L']].map(([key, label]) => <label className="form-field" key={key}><span>{label}</span><input type="number" step="any" value={testForm[key]} onChange={(event) => updateTestField(key, event.target.value)} required /></label>)}</div>{logState === 'error' && <p className="form-error">Could not save this test. Check that the API is running.</p>}<button className="primary-button modal-submit" type="submit" disabled={logState === 'saving'}>{logState === 'saved' ? <><Check size={17} /> Saved</> : <><Save size={17} /> {logState === 'saving' ? 'Saving...' : 'Save to community map'}</>}</button></form></div>}
   </div>;
 }
