@@ -31,24 +31,38 @@ export default function App() {
   const submitTest = async (event) => {
     event.preventDefault();
     setLogState('saving');
+
     const status = Number(testForm.fluoride) > 1.5 || Number(testForm.ph) < 6.5 || Number(testForm.ph) > 8.5 ? 'contaminated' : 'safe';
+
     try {
-      const { error } = await supabase.from('water_tests').insert([{
-        location: testForm.location || 'India Test Point',
-        latitude: Number(testForm.latitude) || 20.5937,
-        longitude: Number(testForm.longitude) || 78.9629,
+      const payload = {
+        location: testForm.location || 'North Bengaluru',
+        latitude: parseFloat(testForm.latitude) || 12.9716,
+        longitude: parseFloat(testForm.longitude) || 77.5946,
         ph: parseFloat(testForm.ph) || 7.0,
         fluoride: parseFloat(testForm.fluoride) || 0.0,
         nitrates: parseFloat(testForm.nitrates) || 0.0,
         hardness: parseFloat(testForm.hardness) || 0.0,
         status: status || 'safe',
         safety_score: parseInt(testForm.safety_score, 10) || 80,
-      }]);
-      if (error) throw error;
+      };
+
+      const { data, error } = await supabase
+        .from('water_tests')
+        .insert([payload])
+        .select();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        setLogState('error');
+        return;
+      }
+
       setLogState('saved');
-      window.dispatchEvent(new CustomEvent('jalrakshak:test-created'));
+      window.dispatchEvent(new CustomEvent('jalrakshak:test-created', { detail: data?.[0] || payload }));
       window.setTimeout(() => { setLogOpen(false); setLogState('idle'); }, 700);
-    } catch {
+    } catch (err) {
+      console.error('Form execution error:', err);
       setLogState('error');
     }
   };
