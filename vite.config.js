@@ -8,4 +8,7 @@ export default defineConfig({
       '/api': 'http://localhost:5194',
     },
   },
+  preview: {
+    allowedHosts: ['jalrakshak-cjm2.onrender.com', '.onrender.com'],
+  },
 });

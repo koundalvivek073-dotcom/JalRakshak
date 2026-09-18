@@ -7,12 +7,30 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const port = process.env.PORT || 3000;
+const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(process.env.SUPABASE_URL, supabaseKey, { auth: { persistSession: false } });
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } }) : null;
+
+const requireSupabase = (req, res, next) => {
+  if (!supabase) {
+    return res.status(503).json({
+      error: 'Supabase is not configured. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to your .env file.',
+    });
+  }
+  return next();
+};
 
 app.use(express.json({ limit: '10kb' }));
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
+  const origin = req.headers.origin;
+  const configuredOrigin = process.env.ALLOWED_ORIGIN;
+  if (!configuredOrigin || configuredOrigin === '*') {
+    res.header('Access-Control-Allow-Origin', '*');
+  } else if (origin && (origin === configuredOrigin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', configuredOrigin);
+  }
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
@@ -20,6 +38,8 @@ app.use((req, res, next) => {
 });
 
 const testFields = ['location', 'latitude', 'longitude', 'ph', 'fluoride', 'nitrates', 'hardness', 'status', 'safety_score'];
+
+app.use('/api', requireSupabase);
 
 app.get('/api/tests', async (req, res) => {
   try {

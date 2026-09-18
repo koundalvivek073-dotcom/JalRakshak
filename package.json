@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n \"api,web\" -c \"yellow,cyan\" \"node server.cjs\" \"vite\"",
+    "dev:frontend": "vite",
     "api": "node server.cjs",
     "build": "npx vite build",
     "preview": "vite preview"
@@ -12,13 +13,16 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
-    "vite": "^5.4.10",
-    "express": "^4.21.2",
-    "dotenv": "^16.4.7"
+    "vite": "^5.4.10"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }
