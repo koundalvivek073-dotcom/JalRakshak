@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, ArrowLeft, Bell, Camera, Check, ChevronDown, Clock3, Droplets, FileCheck2, Home, Leaf, LogIn, LogOut, Mail, Map as MapIcon, MapPin, Menu, Moon, Phone, Plus, Radio, Save, ShieldCheck, Sun, Truck, UserRound, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Bell, Camera, Check, ChevronDown, Clock3, Compass, Droplets, FileCheck2, Home, Leaf, LogIn, LogOut, Mail, Map as MapIcon, MapPin, Menu, Moon, Phone, Plus, Radio, Save, ShieldCheck, Sparkles, Sun, Truck, UserRound, X } from 'lucide-react';
 import BorewellMap from './components/BorewellMap';
 import HealthAlerts from './components/HealthAlerts';
 import ImpactStats from './components/ImpactStats';
@@ -51,28 +51,51 @@ export default function App() {
   };
 
   const updateTestField = (field, value) => setTestForm((current) => ({ ...current, [field]: value }));
-  const openPage = (page) => {
-    setActivePage(page);
+
+  const navigateTo = (destination) => {
     setMenuOpen(false);
-    const targetHash = page === 'home' ? '' : `#${page}`;
-    if (window.location.hash !== targetHash) {
-      if (page === 'home') {
-        history.pushState(null, '', window.location.pathname + window.location.search);
+    if (destination === 'scan') {
+      setActivePage('scan');
+      window.location.hash = 'scan';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (activePage !== 'home') {
+      setActivePage('home');
+      history.pushState(null, '', window.location.pathname + (destination === 'home' ? '' : `#${destination}`));
+      setTimeout(() => {
+        const el = document.getElementById(destination === 'home' ? 'top' : destination);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    } else {
+      if (destination === 'home') {
+        history.pushState(null, '', window.location.pathname);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        window.location.hash = page;
+        window.location.hash = destination;
+        const el = document.getElementById(destination);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
       }
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   const getWaterStatus = (values) => { const contaminated = Number(values.fluoride) > 1.5 || Number(values.ph) < 6.5 || Number(values.ph) > 8.5; if (contaminated) return 'contaminated'; return Number(values.nitrates) > 45 || Number(values.hardness) > 600 ? 'caution' : 'safe'; };
 
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-      if (['map', 'scan', 'registry'].includes(hash)) {
-        setActivePage(hash);
+      if (hash === 'scan') {
+        setActivePage('scan');
       } else {
         setActivePage('home');
+        if (hash === 'map' || hash === 'registry') {
+          setTimeout(() => {
+            const el = document.getElementById(hash);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
       }
     };
     handleHashSync();
@@ -205,45 +228,190 @@ export default function App() {
     <div className="water-pour-scene" aria-hidden="true"><span className="water-fill-layer" /><span className="water-source" /><span className="water-stream" /><span className="water-stream-glint" /><span className="water-drop drop-one" /><span className="water-drop drop-two" /><span className="water-drop drop-three" /><span className="water-pool" /></div>
     {waterAlert === 'contaminated' && <div className="water-warning-overlay contaminated-overlay" aria-hidden="true"><AlertTriangle size={112} strokeWidth={1.4} /><strong>CONTAMINATED WATER</strong></div>}
     {waterAlert === 'safe' && <div className="water-warning-overlay safe-overlay" aria-hidden="true"><Leaf size={112} strokeWidth={1.4} /><strong>YOU ARE SAFE</strong></div>}
-    <header className="topbar"><button className="brand brand-button" onClick={() => openPage('home')}><span className="brand-mark"><Droplets size={19} /></span><span>Jal<span>Rakshak</span></span></button><nav><button className={activePage === 'home' ? 'tab-link active' : 'tab-link'} onClick={() => openPage('home')}>Home</button><button className={activePage === 'map' ? 'tab-link active' : 'tab-link'} onClick={() => openPage('map')}>Live map</button><button className={activePage === 'scan' ? 'tab-link active' : 'tab-link'} onClick={() => openPage('scan')}>Scan strip</button><button className={activePage === 'registry' ? 'tab-link active' : 'tab-link'} onClick={() => openPage('registry')}>Registry</button></nav><div className="top-actions"><button className="icon-button" title="Toggle theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={17} /> : <Moon size={17} />}</button><button className={`icon-button notification ${notificationOpen ? 'is-active' : ''}`} title="Notifications" onClick={() => setNotificationOpen(!notificationOpen)}><Bell size={17} />{lastLoggedAt && <i />}</button>{sessionUser ? <button className="profile" title="Open account" onClick={() => setProfileOpen(!profileOpen)}><span>{(sessionUser.user_metadata?.full_name || sessionUser.email || 'U').slice(0, 2).toUpperCase()}</span><strong>{sessionUser.user_metadata?.full_name || sessionUser.email || 'Account'}</strong><ChevronDown size={14} /></button> : <button className="login-button" onClick={() => openAuth('login')}><LogIn size={15} /> Log in</button>}<button className="menu-button" onClick={() => setMenuOpen(!menuOpen)}><Menu size={19} /></button></div></header>
+    <header className="topbar"><button className="brand brand-button" onClick={() => navigateTo('home')}><span className="brand-mark"><Droplets size={19} /></span><span>Jal<span>Rakshak</span></span></button><nav><button className={activePage === 'home' ? 'tab-link active' : 'tab-link'} onClick={() => navigateTo('home')}>Home</button><button className="tab-link" onClick={() => navigateTo('map')}>Community map</button><button className={activePage === 'scan' ? 'tab-link active' : 'tab-link'} onClick={() => navigateTo('scan')}>Scan strip</button><button className="tab-link" onClick={() => navigateTo('registry')}>Tanker registry</button></nav><div className="top-actions"><button className="icon-button" title="Toggle theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={17} /> : <Moon size={17} />}</button><button className={`icon-button notification ${notificationOpen ? 'is-active' : ''}`} title="Notifications" onClick={() => setNotificationOpen(!notificationOpen)}><Bell size={17} />{lastLoggedAt && <i />}</button>{sessionUser ? <button className="profile" title="Open account" onClick={() => setProfileOpen(!profileOpen)}><span>{(sessionUser.user_metadata?.full_name || sessionUser.email || 'U').slice(0, 2).toUpperCase()}</span><strong>{sessionUser.user_metadata?.full_name || sessionUser.email || 'Account'}</strong><ChevronDown size={14} /></button> : <button className="login-button" onClick={() => openAuth('login')}><LogIn size={15} /> Log in</button>}<button className="menu-button" onClick={() => setMenuOpen(!menuOpen)}><Menu size={19} /></button></div></header>
     {notificationOpen && <div className="notification-panel"><div className="notification-panel-head"><span>Notifications</span><button className="icon-button" title="Close notifications" onClick={() => setNotificationOpen(false)}><X size={15} /></button></div>{lastLoggedAt ? <button className="notification-item" onClick={() => setContributionOpen(true)}><span className="notification-icon"><FileCheck2 size={17} /></span><span><strong>Log submitted successfully</strong><small>Your water test is now on the community map.</small><em>{lastLoggedAt}</em></span></button> : <p className="notification-empty">Your verified community updates will appear here.</p>}</div>}
     {profileOpen && <div className="profile-panel"><div className="profile-panel-avatar"><UserRound size={18} /></div><div><strong>{sessionUser?.user_metadata?.full_name || sessionUser?.email || 'Community member'}</strong><span>{sessionUser?.phone || sessionUser?.email || 'Verified contributor'}</span></div><button className="icon-button" title="Close account" onClick={() => setProfileOpen(false)}><X size={15} /></button><div className="profile-panel-status"><span className="online-dot" /> Logged in and contributing <button className="profile-logout" onClick={logout}><LogOut size={13} /> Log out</button></div></div>}
-    {menuOpen && <div className="mobile-nav"><button className="tab-link" onClick={() => openPage('home')}>Home</button><button className="tab-link" onClick={() => openPage('map')}>Live map</button><button className="tab-link" onClick={() => openPage('scan')}>Scan strip</button><button className="tab-link" onClick={() => openPage('registry')}>Registry</button></div>}
+    {menuOpen && <div className="mobile-nav"><button className="tab-link" onClick={() => navigateTo('home')}>Home</button><button className="tab-link" onClick={() => navigateTo('map')}>Community map</button><button className="tab-link" onClick={() => navigateTo('scan')}>Scan strip</button><button className="tab-link" onClick={() => navigateTo('registry')}>Tanker registry</button></div>}
     <main id="top">
-      {activePage !== 'home' && (
-        <div className="subpage-nav-bar">
-          <button className="back-home-button" onClick={() => openPage('home')} title="Return to Home">
-            <ArrowLeft size={16} />
-            <span>Back to Home</span>
-          </button>
-          <div className="subpage-breadcrumb">
-            <button className="crumb-link" onClick={() => openPage('home')}>Home</button>
-            <span className="crumb-sep">/</span>
-            <span className="crumb-current">
-              {activePage === 'scan' && 'Scan test strip'}
-              {activePage === 'map' && 'Live aquifer map'}
-              {activePage === 'registry' && 'Tanker registry'}
-            </span>
+      {activePage === 'home' && (
+        <>
+          <section className="hero" id="overview">
+            <div>
+              <div className="live-label"><Radio size={14} /> Community network live <span>·</span> India</div>
+              <h1>Know your water.<br /><em>Protect your neighbourhood.</em></h1>
+              <p className="hero-copy">JalRakshak turns everyday water tests into a shared early-warning network for families, farms, and the aquifer below.</p>
+              <div className="hero-actions">
+                <button className="primary-button" onClick={() => navigateTo('scan')}><Camera size={17} /> Start a water scan</button>
+                <button className="secondary-button" onClick={() => navigateTo('map')}><MapIcon size={16} /> Open community map</button>
+                <button className="secondary-button" onClick={openLogForm}><Save size={16} /> Log a new test</button>
+              </div>
+            </div>
+            <div className="hero-score">
+              <div className="score-ring"><strong>78</strong><span>network<br />health</span></div>
+              <div><span>Community network</span><strong className="score-up">Live</strong></div>
+            </div>
+          </section>
+
+          <ImpactStats />
+
+          <section className="feature-hub">
+            <div className="feature-hub-header">
+              <div>
+                <p className="eyebrow"><Sparkles size={14} /> Features & Modules</p>
+                <h2>Choose a feature to open</h2>
+              </div>
+              <span className="sync-note"><ShieldCheck size={16} /> Verified community data</span>
+            </div>
+
+            <div className="feature-cards-grid">
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-card-badge"><Radio size={12} /> Live Network</span>
+                  <div className="feature-card-icon"><MapIcon size={24} /></div>
+                  <h3>Community Aquifer Map</h3>
+                  <p>Interactive geographic mapping of local borewells, Fluoride plumes, and real-time community water test safety scores.</p>
+                </div>
+                <div className="feature-card-bottom">
+                  <div className="feature-card-meta"><span>5 Active borewells</span><span>·</span><span>82% Coverage</span></div>
+                  <button className="feature-card-btn" onClick={() => navigateTo('map')}>
+                    <span>Open Community Map</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </article>
+
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-card-badge"><Camera size={12} /> Camera Vision</span>
+                  <div className="feature-card-icon coral"><Camera size={24} /></div>
+                  <h3>Water Strip Scanner</h3>
+                  <p>In-browser RGB colorimetry reader converting ₹5 test strip photos into instant Fluoride, pH, and Nitrate readings.</p>
+                </div>
+                <div className="feature-card-bottom">
+                  <div className="feature-card-meta"><span>Instant calibration</span><span>·</span><span>4 Parameters</span></div>
+                  <button className="feature-card-btn" onClick={() => navigateTo('scan')}>
+                    <span>Open Water Scanner</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </article>
+
+              <article className="feature-card">
+                <div className="feature-card-top">
+                  <span className="feature-card-badge"><ShieldCheck size={12} /> Verified Network</span>
+                  <div className="feature-card-icon amber"><Truck size={24} /></div>
+                  <h3>Tanker Supply Registry</h3>
+                  <p>Crowdsourced directory of private water suppliers with verified quality ratings, contamination reports, and service routes.</p>
+                </div>
+                <div className="feature-card-bottom">
+                  <div className="feature-card-meta"><span>4.8★ Avg rating</span><span>·</span><span>Verified routes</span></div>
+                  <button className="feature-card-btn" onClick={() => navigateTo('registry')}>
+                    <span>Open Tanker Registry</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </article>
+            </div>
+          </section>
+        </>
+      )}
+
+      {activePage === 'map' && (
+        <div className="feature-page" id="map">
+          <div className="subpage-nav-bar">
+            <button className="back-home-button" onClick={() => navigateTo('home')} title="Return to Home">
+              <ArrowLeft size={16} />
+              <span>Return to Home</span>
+            </button>
+            <div className="subpage-breadcrumb">
+              <button className="crumb-link" onClick={() => navigateTo('home')}>Home</button>
+              <span className="crumb-sep">/</span>
+              <span className="crumb-current">Community map</span>
+            </div>
+          </div>
+          <div className="section-grid">
+            <BorewellMap locations={borewells} />
+            <div className="side-column">
+              <HealthAlerts scan={scan} />
+              <div className="coverage panel">
+                <div><p className="eyebrow">Neighbourhood pulse</p><h2>Coverage this week</h2></div>
+                <div className="coverage-number"><strong>82%</strong><span>of mapped homes</span></div>
+                <div className="progress"><span /></div>
+                <p className="muted-copy">24 new tests logged across 6 streets. Keep the network growing.</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
-      {activePage === 'home' && <><section className="hero" id="overview"><div><div className="live-label"><Radio size={14} /> Community network live <span>·</span> India</div><h1>Know your water.<br /><em>Protect your neighbourhood.</em></h1><p className="hero-copy">JalRakshak turns everyday water tests into a shared early-warning network for families, farms, and the aquifer below.</p><div className="hero-actions"><button className="primary-button" onClick={() => openPage('scan')}><Plus size={17} /> Start a water scan</button><button className="secondary-button" onClick={openLogForm}><Save size={16} /> Log a new test</button><span className="sync-note"><ShieldCheck size={16} /> Community intelligence</span></div></div><div className="hero-score"><div className="score-ring"><strong>78</strong><span>network<br />health</span></div><div><span>Community network</span><strong className="score-up">Live</strong></div></div></section><ImpactStats /></>}{activePage === 'map' && <div className="section-grid" id="map"><BorewellMap locations={borewells} /><div className="side-column"><HealthAlerts scan={scan} /><div className="coverage panel"><div><p className="eyebrow">Neighbourhood pulse</p><h2>Coverage this week</h2></div><div className="coverage-number"><strong>82%</strong><span>of mapped homes</span></div><div className="progress"><span /></div><p className="muted-copy">24 new tests logged across 6 streets. Keep the network growing.</p></div></div></div>}{activePage === 'scan' && <div className="scan-page" id="scan"><div className="scan-page-columns"><div className="lower-grid"><Scanner onScan={handleScan} /></div><PreviousLogs /></div></div>}{activePage === 'registry' && <div className="single-page-view"><TankerRegistry tankers={tankers} /></div>}
+
+      {activePage === 'scan' && (
+        <div className="scan-page" id="scan">
+          <div className="subpage-nav-bar">
+            <button className="back-home-button" onClick={() => navigateTo('home')} title="Return to Home">
+              <ArrowLeft size={16} />
+              <span>Return to Home</span>
+            </button>
+            <div className="subpage-breadcrumb">
+              <button className="crumb-link" onClick={() => navigateTo('home')}>Home</button>
+              <span className="crumb-sep">/</span>
+              <span className="crumb-current">Scan strip</span>
+            </div>
+          </div>
+          <div className="scan-page-columns">
+            <div className="lower-grid">
+              <Scanner onScan={handleScan} />
+            </div>
+            <PreviousLogs />
+          </div>
+        </div>
+      )}
+
+      {activePage === 'registry' && (
+        <div className="feature-page" id="registry">
+          <div className="subpage-nav-bar">
+            <button className="back-home-button" onClick={() => navigateTo('home')} title="Return to Home">
+              <ArrowLeft size={16} />
+              <span>Return to Home</span>
+            </button>
+            <div className="subpage-breadcrumb">
+              <button className="crumb-link" onClick={() => navigateTo('home')}>Home</button>
+              <span className="crumb-sep">/</span>
+              <span className="crumb-current">Tanker registry</span>
+            </div>
+          </div>
+          <div className="single-page-view">
+            <TankerRegistry tankers={tankers} />
+          </div>
+        </div>
+      )}
     </main>
-    <footer><span>JalRakshak <b>·</b> Community water intelligence</span><span>Data is crowdsourced and should be confirmed by a certified lab.</span><span className="footer-links">Privacy · Guidelines</span></footer>
+    <footer className="site-footer">
+      <div className="footer-nav">
+        <button className={`footer-nav-link${activePage === 'home' ? ' active' : ''}`} onClick={() => navigateTo('home')}>Home</button>
+        <button className={`footer-nav-link${activePage === 'map' ? ' active' : ''}`} onClick={() => navigateTo('map')}>Community Map</button>
+        <button className={`footer-nav-link${activePage === 'scan' ? ' active' : ''}`} onClick={() => navigateTo('scan')}>Scan Strip</button>
+        <button className={`footer-nav-link${activePage === 'registry' ? ' active' : ''}`} onClick={() => navigateTo('registry')}>Tanker Registry</button>
+      </div>
+      <div className="footer-bottom">
+        <span>JalRakshak <b>·</b> Community water intelligence</span>
+        <span>Data is crowdsourced and should be confirmed by a certified lab.</span>
+        <span className="footer-links">Privacy · Guidelines</span>
+      </div>
+    </footer>
     <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
-      <button className={activePage === 'home' ? 'bottom-nav-item active' : 'bottom-nav-item'} onClick={() => openPage('home')}>
+      <button className={`bottom-nav-item${activePage === 'home' ? ' active' : ''}`} onClick={() => navigateTo('home')}>
         <Home size={18} />
         <span>Home</span>
       </button>
-      <button className={activePage === 'map' ? 'bottom-nav-item active' : 'bottom-nav-item'} onClick={() => openPage('map')}>
+      <button className={`bottom-nav-item${activePage === 'map' ? ' active' : ''}`} onClick={() => navigateTo('map')}>
         <MapIcon size={18} />
         <span>Live Map</span>
       </button>
-      <button className={activePage === 'scan' ? 'bottom-nav-item active' : 'bottom-nav-item'} onClick={() => openPage('scan')}>
+      <button className={`bottom-nav-item${activePage === 'scan' ? ' active' : ''}`} onClick={() => navigateTo('scan')}>
         <Camera size={18} />
         <span>Scan</span>
       </button>
-      <button className={activePage === 'registry' ? 'bottom-nav-item active' : 'bottom-nav-item'} onClick={() => openPage('registry')}>
+      <button className={`bottom-nav-item${activePage === 'registry' ? ' active' : ''}`} onClick={() => navigateTo('registry')}>
         <Truck size={18} />
         <span>Registry</span>
       </button>
