@@ -6,10 +6,24 @@ const { createClient } = require('@supabase/supabase-js');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5194;
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } }) : null;
+
+const sendDatabaseError = (res, error) => {
+  const message = error?.message || 'Database request failed';
+  const upstreamUnavailable = Number(error?.status) >= 500
+    || /web server is down|cloudflare|521|522|523|524|fetch failed|econnreset|enotfound/i.test(message);
+  console.error('Supabase request failed:', {
+    status: error?.status,
+    code: error?.code,
+    message: upstreamUnavailable ? 'Supabase service is unavailable.' : message,
+  });
+  return res.status(upstreamUnavailable ? 502 : 500).json({
+    error: upstreamUnavailable ? 'Supabase is temporarily unavailable. Check the Supabase project status and try again.' : message,
+  });
+};
 
 const requireSupabase = (req, res, next) => {
   if (!supabase) {
@@ -44,10 +58,10 @@ app.use('/api', requireSupabase);
 app.get('/api/tests', async (req, res) => {
   try {
     const { data, error } = await supabase.from('water_tests').select('*').order('created_at', { ascending: false });
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) return sendDatabaseError(res, error);
     return res.status(200).json(data || []);
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Database request failed' });
+    return sendDatabaseError(res, error);
   }
 });
 
@@ -56,20 +70,20 @@ app.post('/api/tests', async (req, res) => {
     const payload = Object.fromEntries(testFields.filter((field) => req.body[field] !== undefined).map((field) => [field, req.body[field]]));
     if (!payload.location || !payload.status) return res.status(400).json({ error: 'location and status are required' });
     const { data, error } = await supabase.from('water_tests').insert([payload]).select();
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) return sendDatabaseError(res, error);
     return res.status(201).json(data?.[0] || null);
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Database request failed' });
+    return sendDatabaseError(res, error);
   }
 });
 
 app.delete('/api/tests/:id', async (req, res) => {
   try {
     const { error } = await supabase.from('water_tests').delete().eq('id', req.params.id);
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) return sendDatabaseError(res, error);
     return res.status(200).json({ message: 'Test deleted successfully' });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Database request failed' });
+    return sendDatabaseError(res, error);
   }
 });
 

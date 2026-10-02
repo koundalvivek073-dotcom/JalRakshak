@@ -12,7 +12,7 @@ npm.cmd install
 npm.cmd run api
 ```
 
-The API listens on `http://localhost:5190` by default.
+The API listens on `http://localhost:5194` by default, matching the Vite development proxy. Set `PORT` in `.env` to use a different port.
 
 ## Frontend API URL
 
